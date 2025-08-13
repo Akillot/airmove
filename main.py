@@ -2,17 +2,57 @@ import cv2
 import mediapipe as mp
 import pyautogui
 import time
+import math
+
+PINCH_IN = 40
+PINCH_OUT = 70
+COOLDOWN = 0.6
+SMOOTHING = 0.30
+FPS_SLEEP = 0.01
+
+HOTZONE_W = 180
+HOTZONE_H = 80
+
+pyautogui.FAILSAFE = False
+pyautogui.PAUSE = 0
 
 mp_hands = mp.solutions.hands
-hands = mp_hands.Hands()
-mp_draw = mp.solutions.drawing_utils
+hands = mp_hands.Hands(
+    model_complexity=1,
+    max_num_hands=1,
+    min_detection_confidence=0.6,
+    min_tracking_confidence=0.5
+)
 
 last_action_time = 0
-cooldown = 1
+pinch_state = False
 
 screen_w, screen_h = pyautogui.size()
 cap = cv2.VideoCapture(0)
 prev_x, prev_y = pyautogui.position()
+
+def dist(p1, p2):
+    return math.hypot(p1[0]-p2[0], p1[1]-p2[1])
+
+def mac_action(which):
+    if which == 'close':
+        pyautogui.hotkey('command', 'w')
+    elif which == 'min':
+        pyautogui.hotkey('command', 'm')
+    elif which == 'full':
+        pyautogui.hotkey('ctrl', 'command', 'f')
+
+def in_hotzone(x, y):
+    return (0 <= x < HOTZONE_W) and (0 <= y < HOTZONE_H)
+
+def sector(x):
+    sw = HOTZONE_W / 3
+    if x < sw:
+        return 'close'
+    elif x < 2*sw:
+        return 'min'
+    else:
+        return 'full'
 
 while True:
     ret, frame = cap.read()
@@ -21,42 +61,37 @@ while True:
 
     frame = cv2.flip(frame, 1)
     h, w, _ = frame.shape
-
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = hands.process(rgb)
+
     if result.multi_hand_landmarks:
-        for hand_landmark in result.multi_hand_landmarks:
+        for lm in result.multi_hand_landmarks:
+            ix, iy = lm.landmark[8].x * w, lm.landmark[8].y * h
+            tx, ty = lm.landmark[4].x * w, lm.landmark[4].y * h
+            d = dist((ix, iy), (tx, ty))
 
-            x = hand_landmark.landmark[8].x * w
-            y = hand_landmark.landmark[8].y * h
+            if not pinch_state and d < PINCH_IN:
+                pinch_state = True
+            elif pinch_state and d > PINCH_OUT:
+                pinch_state = False
 
-            x_thumb = hand_landmark.landmark[4].x * w
-            y_thumb = hand_landmark.landmark[4].y * h
-
-            distance = ((x_thumb - x) ** 2 + (y_thumb - y) ** 2) ** 0.5
-
-            current_time = time.time()
-
-            if distance < 40 and current_time - last_action_time > cooldown:
-                print("Click by pinch in")
-                pyautogui.doubleClick()
-                last_action_time = current_time
-
-            elif distance > 100 and current_time - last_action_time > cooldown:
-                last_action_time = current_time
-
-            screen_x = int(hand_landmark.landmark[8].x * screen_w)
-            screen_y = int(hand_landmark.landmark[8].y * screen_h)
-
-            smooth_x = prev_x + (screen_x - prev_x) * 0.3
-            smooth_y = prev_y + (screen_y - prev_y) * 0.3
-
-            smooth_x = max(0, min(smooth_x, screen_w - 1))
-            smooth_y = max(0, min(smooth_y, screen_h - 1))
-
+            screen_x = int(lm.landmark[8].x * screen_w)
+            screen_y = int(lm.landmark[8].y * screen_h)
+            smooth_x = prev_x + (screen_x - prev_x) * SMOOTHING
+            smooth_y = prev_y + (screen_y - prev_y) * SMOOTHING
+            smooth_x = max(0, min(int(smooth_x), screen_w - 1))
+            smooth_y = max(0, min(int(smooth_y), screen_h - 1))
             pyautogui.moveTo(smooth_x, smooth_y)
             prev_x, prev_y = smooth_x, smooth_y
 
-    time.sleep(0.01)
+            current_time = time.time()
+            if pinch_state and (current_time - last_action_time > COOLDOWN):
+                if in_hotzone(smooth_x, smooth_y):
+                    mac_action(sector(smooth_x))
+                else:
+                    pyautogui.click()
+                last_action_time = current_time
+
+    time.sleep(FPS_SLEEP)
 
 cap.release()
