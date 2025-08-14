@@ -3,6 +3,7 @@ import mediapipe as mp
 import pyautogui
 import time
 import math
+from collections import deque
 
 PINCH_IN = 40
 PINCH_OUT = 70
@@ -12,6 +13,7 @@ FPS_SLEEP = 0.01
 
 HOTZONE_W = 180
 HOTZONE_H = 80
+SMOOTH_BUFFER = 5
 
 pyautogui.FAILSAFE = False
 pyautogui.PAUSE = 0
@@ -30,6 +32,8 @@ pinch_state = False
 screen_w, screen_h = pyautogui.size()
 cap = cv2.VideoCapture(0)
 prev_x, prev_y = pyautogui.position()
+positions_x = deque(maxlen=SMOOTH_BUFFER)
+positions_y = deque(maxlen=SMOOTH_BUFFER)
 
 def dist(p1, p2):
     return math.hypot(p1[0]-p2[0], p1[1]-p2[1])
@@ -77,8 +81,12 @@ while True:
 
             screen_x = int(lm.landmark[8].x * screen_w)
             screen_y = int(lm.landmark[8].y * screen_h)
-            smooth_x = prev_x + (screen_x - prev_x) * SMOOTHING
-            smooth_y = prev_y + (screen_y - prev_y) * SMOOTHING
+            positions_x.append(screen_x)
+            positions_y.append(screen_y)
+            avg_x = sum(positions_x) / len(positions_x)
+            avg_y = sum(positions_y) / len(positions_y)
+            smooth_x = prev_x + (avg_x - prev_x) * SMOOTHING
+            smooth_y = prev_y + (avg_y - prev_y) * SMOOTHING
             smooth_x = max(0, min(int(smooth_x), screen_w - 1))
             smooth_y = max(0, min(int(smooth_y), screen_h - 1))
             pyautogui.moveTo(smooth_x, smooth_y)
