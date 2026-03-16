@@ -3,11 +3,11 @@
 is a tool that allows you to control your computer using hand gestures tracked by your webcam.
 It uses computer vision to detect and track finger movements, enabling you to move the mouse cursor and interact with your system through gestures instead of traditional input devices.
 
-> ✨ Control your computer with gestures — no mouse or touchpad needed!
+> Control your computer with gestures — no mouse or touchpad needed!
 
 ---
 
-## 🚀 Features
+## Features
 
 * Move your mouse cursor with your index finger  
 * Double click on "pinch in" gesture  
@@ -17,7 +17,7 @@ It uses computer vision to detect and track finger movements, enabling you to mo
 
 ---
 
-## ⚙️ Requirements
+## Requirements
 
 * Python 3.8+
 * Webcam
@@ -25,7 +25,7 @@ It uses computer vision to detect and track finger movements, enabling you to mo
 
 ---
 
-## 📦 Installation
+## Installation
 
 ### 1. Clone the repository
 
