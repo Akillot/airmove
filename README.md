@@ -18,6 +18,33 @@ AirMove uses your webcam to track hand gestures and translate them into mouse in
 
 Built with OpenCV and MediaPipe.
 
+---
+
+## AI Bootstrap Prompt
+
+> Copy and paste into Claude, Cursor, Codex, or GPT:
+
+```text
+You are working on AirMove — a Python app that tracks hand gestures
+via webcam and converts them to mouse input using MediaPipe and PyAutoGUI.
+
+Stack: Python 3.8+, OpenCV, MediaPipe, PyAutoGUI
+Entry point: main.py (single file, ~100 lines)
+Run: python -m venv .venv && source .venv/bin/activate && pip install opencv-python mediapipe pyautogui && python main.py
+
+Non-obvious:
+- All tunable constants (PINCH_IN, PINCH_OUT, COOLDOWN, SMOOTHING,
+  SMOOTH_BUFFER, HOTZONE_W, HOTZONE_H) are at the top of main.py — no config file
+- Hysteresis is intentional: pinch-in threshold (40px) differs from
+  pinch-out (70px) to prevent click flickering
+- macOS hotzone actions use Cmd+W / Cmd+M / Ctrl+Cmd+F — hardcoded,
+  will not work on other OS without modification
+- No webcam preview window — headless by design to reduce CPU usage
+- Single hand only (max_num_hands=1)
+```
+
+---
+
 ## How it works
 
 ```
@@ -108,28 +135,3 @@ main.py (single file, ~100 lines)
 ## License
 
 [MIT](./LICENSE)
-
----
-
-## AI Bootstrap Prompt
-
-> Copy and paste into Claude, Cursor, Codex, or GPT:
-
-```text
-You are working on AirMove — a Python app that tracks hand gestures
-via webcam and converts them to mouse input using MediaPipe and PyAutoGUI.
-
-Stack: Python 3.8+, OpenCV, MediaPipe, PyAutoGUI
-Entry point: main.py (single file, ~100 lines)
-Run: python -m venv .venv && source .venv/bin/activate && pip install opencv-python mediapipe pyautogui && python main.py
-
-Non-obvious:
-- All tunable constants (PINCH_IN, PINCH_OUT, COOLDOWN, SMOOTHING,
-  SMOOTH_BUFFER, HOTZONE_W, HOTZONE_H) are at the top of main.py — no config file
-- Hysteresis is intentional: pinch-in threshold (40px) differs from
-  pinch-out (70px) to prevent click flickering
-- macOS hotzone actions use Cmd+W / Cmd+M / Ctrl+Cmd+F — hardcoded,
-  will not work on other OS without modification
-- No webcam preview window — headless by design to reduce CPU usage
-- Single hand only (max_num_hands=1)
-```
